@@ -1,0 +1,153 @@
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require('cors');
+const axios = require('axios');
+const cheerio = require('cheerio');
+ 
+
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// erlaube alle Quellen
+app.use(cors());
+
+// MongoDB-Verbindung
+mongoose.connect("mongodb://penta-development.de:27017/seo-tool", {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    }).then(() => console.log('MongoDB Connected'))
+    .catch((err) => console.log(err));
+
+// API-Endpunkt
+app.get("/api/check", (req, res) => {
+    res.send("Hello World!");
+});
+
+// API-Endpunkt für Seitencheck
+app.post("/api/check-pages", async(req, res) => {
+    try {
+        const { url } = req.body;
+
+        // Seite mit Axios laden
+        const response = await axios.get(url);
+
+        // HTML-Inhalt der Seite extrahieren
+        const $ = cheerio.load(response.data);
+
+        // Alle Links auf der Seite extrahieren
+        const links = $("a[href^='" + url + "']");
+
+        // Array für die Ergebnisse initialisieren
+        const results = [];
+
+        // Für jeden Link den performPageCheck ausführen und das Ergebnis speichern
+        for (let i = 0; i < links.length; i++) {
+            const linkUrl = $(links[i]).attr("href");
+            const result = await performPageCheck(linkUrl);
+            results.push(result);
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+
+// Hilfsfunktion für den Seitencheck
+
+async function performPageCheck(url) {
+    const pageData = {};
+    const axiosConfig = {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Accept': '*/*',
+        },
+        timeout: 30000
+    };
+
+    try {
+        // Seite mit Axios laden
+        const response = await axios.get(url, axiosConfig);
+
+        // HTML-Inhalt der Seite extrahieren
+        const $ = cheerio.load(response.data);
+
+        // Titel der Seite
+        pageData.title = $("title").text();
+
+        // Meta-Beschreibung
+        const descriptionTag = $("meta[name='description']");
+        pageData.description = descriptionTag.attr("content") || "";
+
+        // Meta-Keywords
+        const keywordsTag = $("meta[name='keywords']");
+        pageData.keywords = (keywordsTag.attr("content") || "").split(",").map(keyword => keyword.trim());
+
+        // Anzahl der Fehler und Warnungen
+        // TODO: implementieren Sie die Funktion zum Überprüfen von Fehlern und Warnungen
+
+        const errorCount = 0;
+        const warningCount = 0;
+
+        // Bild-Alt-Tags überprüfen
+        const images = $("img");
+        pageData.imageCount = images.length;
+        pageData.missingAltTags = [];
+        images.each((index, image) => {
+            const alt = $(image).attr("alt");
+            if (!alt) {
+                pageData.missingAltTags.push(index + 1);
+            }
+        });
+
+        // Überschriften überprüfen
+        const headings = $("h1, h2, h3, h4, h5, h6");
+        pageData.headingCount = headings.length;
+        pageData.missingHeadings = [];
+        headings.each((index, heading) => {
+            const text = $(heading).text();
+            if (!text) {
+                pageData.missingHeadings.push(index + 1);
+            }
+        });
+
+        // Interne Links überprüfen
+        const internalLinks = $("a[href^='" + url + "']");
+        pageData.internalLinkCount = internalLinks.length;
+        pageData.missingInternalLinks = [];
+        internalLinks.each((index, link) => {
+            const href = $(link).attr("href");
+            if (!href) {
+                pageData.missingInternalLinks.push(index + 1);
+            }
+        });
+
+        // Page-Speed
+        const pageSpeedResponse = await axios.get(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${url}`, axiosConfig);
+        pageData.pageSpeed = pageSpeedResponse.data.lighthouseResult.categories.performance.score * 100;
+
+    } catch (error) {
+        console.log(error);
+        throw new Error("Page check failed");
+    }
+
+    return pageData;
+}
+
+
+
+module.exports = {
+    performPageCheck
+};
+
+
+// Server starten
+app.listen(5001, () => {
+    console.log("Server is running on port 5000");
+});
+

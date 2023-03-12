@@ -1,0 +1,32 @@
+/* Define Tailwind CSS classes for the Home component */
+.home-page {
+  @apply flex flex-col items-center justify-center min-h-screen bg-gray-100;
+}
+
+.title {
+  @apply text-6xl font-extrabold text-blue-500;
+}
+ 
+.top-fixed {
+  @apply fixed top-0 left-0 w-full z-10   bg-white shadow-md py-2;
+}
+form {
+  @apply flex flex-col items-center;
+}
+
+label {
+  @apply text-lg font-medium mb-2;
+}
+
+.input-field {
+  @apply px-4 py-2 border border-gray-400 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.submit-button {
+  @apply bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-md shadow-md transition-all duration-300 ease-in-out hover:shadow-lg transform hover:-translate-y-1 hover:scale-110;
+}
+
+.results-container {
+  @apply   p-6;
+  padding-top: 90px;
+ }
