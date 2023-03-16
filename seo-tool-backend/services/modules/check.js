@@ -1,7 +1,32 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const mongoose = require('mongoose');
 
-async function performPageCheck(url) {
+
+const CheckSchema = new mongoose.Schema({
+    url: {
+        type: String,
+        required: true,
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    checkData: {
+        type: Object,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
+const Check = mongoose.model('Check', CheckSchema, "checks");
+
+
+async function performPageCheck(url, userId) {
     const pageData = {};
     const axiosConfig = {
         headers: {
@@ -53,6 +78,14 @@ async function performPageCheck(url) {
 
         // Calculate page score
         pageData.score = calculatePageScore(pageData);
+
+        // Save the check to the database
+        const newCheck = new Check({
+            url: url,
+            userId: userId,
+            checkData: pageData
+        });
+        await newCheck.save();
 
     } catch (error) {
         console.log(error);
@@ -210,5 +243,6 @@ function calculatePageScore(pageData) {
 }
 
 module.exports = {
+    Check,
     performPageCheck
 }
