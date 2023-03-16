@@ -1,5 +1,6 @@
-const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+
 
 const UserSchema = new mongoose.Schema({
     username: {
@@ -28,7 +29,11 @@ UserSchema.pre('save', async function(next) {
     next();
 });
 
-const User = mongoose.model('User', UserSchema);
+UserSchema.methods.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
+
+const User = mongoose.model('User', UserSchema, 'users');
 
 const registerUser = async(userData) => {
     const { username, password, email } = userData;
@@ -39,25 +44,23 @@ const registerUser = async(userData) => {
         throw new Error('User with this username or email already exists');
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Insert new user into the database
-    const newUser = await User.create({ username, password: hashedPassword, email });
+    const newUser = await User.create({ username, password, email });
 
     return newUser;
 }
 
-const loginUser = async(username, password) => {
+const loginUser = async(email, password) => {
     // Find user in the database
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });
     if (!user) {
         throw new Error('User not found');
     }
 
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
+
+
     if (!isMatch) {
         throw new Error('Incorrect password');
     }
@@ -67,7 +70,9 @@ const loginUser = async(username, password) => {
 }
 
 
+
 module.exports = {
+    User,
     registerUser,
     loginUser,
 }

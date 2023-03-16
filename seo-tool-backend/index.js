@@ -4,9 +4,10 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 const checkController = require('./controllers/checkController');
 const userController = require('./controllers/userController');
-const db = require('./database/db');
+const dbConnection = require("./database/db");
 const { authenticate } = require('./middleware/authMiddleware');
-require('dotenv').config();
+require("dotenv").config();
+
 
 
 
@@ -20,16 +21,22 @@ app.use(cors());
 app.post("/api/seocheck", authenticate, checkController.postCheckPages);
 
 // Registrieren eines neuen Benutzers
-app.post('/api/user/register', userController.registerUser);
+app.post('/api/register', userController.registerUser);
 
 // Einloggen eines Benutzers
-app.post('/api/user/login', userController.loginUser);
+app.post('/api/login', userController.loginUser);
+
+// Liefert die letzten 10 Checks eines Benutzers
+app.get("/api/latest-checks", authenticate, userController.getLatestChecks);
+
 
 // Server starten
-db.then(() => {
-    app.listen(process.env.PORT, () => {
-        console.log(`Server is running on port ${process.env.PORT}`);
+dbConnection
+    .then(() => {
+        app.listen(process.env.PORT, () => {
+            console.log(`Server is running on port ${process.env.PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.log("Error connecting to MongoDB:", error);
     });
-}).catch((error) => {
-    console.log("Error connecting to MongoDB:", error);
-});

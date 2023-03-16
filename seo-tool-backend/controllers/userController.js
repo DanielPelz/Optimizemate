@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { Check } = require('../services/modules/check');
 const { registerUser, loginUser } = require('../services/modules/user');
 
 const createToken = (user) => {
@@ -6,32 +7,61 @@ const createToken = (user) => {
         expiresIn: '1h',
     });
 };
-
+const filterUserFields = (user) => {
+    return {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+    };
+};
 module.exports = {
     registerUser: async(req, res) => {
         try {
             const userData = req.body;
-            const result = await registerUser(userData);
-            res.json(result);
+            console.log('User data:', userData); // Add this line
+
+            const user = await registerUser(userData);
+            const token = createToken(user);
+            res.json({...filterUserFields(user), token });
         } catch (error) {
-            res.status(500).json({ message: 'Error registering user', error });
+            console.error("Error registering user:", error); // Add this line
+            res.status(500).json({ message: error.message });
         }
-        const result = await registerUser(userData);
-        const token = createToken(result);
-        res.json({...result, token });
     },
 
     loginUser: async(req, res) => {
         try {
-            const { username, password } = req.body;
-            const result = await loginUser(username, password);
-            res.json(result);
+            const { email, password } = req.body;
+            const user = await loginUser(email, password);
+            const token = createToken(user);
+            res.json({...filterUserFields(user), token });
         } catch (error) {
+            console.error("Error logging in user:", error); // Add this line
             res.status(500).json({ message: 'Error logging in user', error });
         }
-        const result = await loginUser(username, password);
-        const token = createToken(result);
-        res.json({...result, token });
+    },
+    getLatestChecks: async(req, res) => {
+        try {
+            const userId = req.user._id;
+            const checks = await Check.find({ userId: userId })
+                .sort({ createdAt: -1 })
+                .limit(10)
+                .lean();
+
+            const summaries = checks.map(check => ({
+                url: check.url,
+                createdAt: check.createdAt,
+                score: check.checkData.score,
+                title: check.checkData.title,
+                description: check.checkData.description,
+                keywords: check.checkData.keywords
+            }));
+
+            res.json(summaries);
+        } catch (error) {
+            console.error("Error getting latest checks:", error);
+            res.status(500).json({ message: 'Error getting latest checks', error });
+        }
     },
 
 };

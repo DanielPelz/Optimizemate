@@ -3,8 +3,8 @@ const cheerio = require('cheerio');
 const { performPageCheck } = require('./modules/check');
 
 module.exports = {
-    checkPages: async(url) => {
-        const result = await performPageCheck(url);
+    checkPages: async(url, userId) => {
+        const result = await performPageCheck(url, userId);
         return result;
     },
 
