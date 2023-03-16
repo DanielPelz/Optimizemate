@@ -38,28 +38,28 @@ async function performPageCheck(url, userId) {
     };
 
     try {
-        // Load page with axios
+        // Laden der Seite
         const response = await axios.get(url, axiosConfig);
 
-        // Extract HTML content of the page
+        // HTML parsen
         const $ = cheerio.load(response.data);
 
-        // Get basic page data
+        // Seite analysieren
         pageData.title = getPageTitle($);
         pageData.description = getPageDescription($);
         pageData.keywords = getPageKeywords($);
 
-        // Get errors and warnings
+        // Finden von Fehlern und Warnungen
         const { errors, warnings } = getErrorsAndWarnings($);
         pageData.errors = errors;
         pageData.warnings = warnings;
 
-        // Get image alt tags check
+        // Image Alt check
         const { imageCount, missingAltTags } = getImageAltTags($);
         pageData.imageCount = imageCount;
         pageData.missingAltTags = missingAltTags;
 
-        // Get headings check
+        // Heading check
         const { headingCount, missingHeadings } = getHeadings($);
         pageData.headingCount = headingCount;
         pageData.missingHeadings = missingHeadings;
@@ -69,17 +69,17 @@ async function performPageCheck(url, userId) {
         pageData.internalLinkCount = internalLinkCount;
         pageData.missingInternalLinks = missingInternalLinks;
 
-        // Get page speed check
+        // Page speed check
         const pageSpeedData = await getPageSpeedData(url);
-        // Merge page speed data with page data
+        // Verbinden der Daten
         Object.assign(pageData, pageSpeedData);
 
 
 
-        // Calculate page score
+        // ausrechnen der Gesamtpunktzahl
         pageData.score = calculatePageScore(pageData);
 
-        // Save the check to the database
+        // Speichern der Daten in der Datenbank
         const newCheck = new Check({
             url: url,
             userId: userId,

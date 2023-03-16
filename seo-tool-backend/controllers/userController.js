@@ -18,13 +18,13 @@ module.exports = {
     registerUser: async(req, res) => {
         try {
             const userData = req.body;
-            console.log('User data:', userData); // Add this line
+
 
             const user = await registerUser(userData);
             const token = createToken(user);
             res.json({...filterUserFields(user), token });
         } catch (error) {
-            console.error("Error registering user:", error); // Add this line
+
             res.status(500).json({ message: error.message });
         }
     },
@@ -36,7 +36,7 @@ module.exports = {
             const token = createToken(user);
             res.json({...filterUserFields(user), token });
         } catch (error) {
-            console.error("Error logging in user:", error); // Add this line
+
             res.status(500).json({ message: 'Error logging in user', error });
         }
     },

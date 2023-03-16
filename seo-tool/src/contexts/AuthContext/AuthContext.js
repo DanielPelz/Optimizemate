@@ -6,7 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Load the user from local storage on initial render
+  // Nur beim ersten Rendern ausführen
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {

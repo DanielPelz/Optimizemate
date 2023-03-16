@@ -38,20 +38,20 @@ const User = mongoose.model('User', UserSchema, 'users');
 const registerUser = async(userData) => {
     const { username, password, email } = userData;
 
-    // Check if user already exists in the database
+    // überprüfen ob user schon existiert
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
         throw new Error('User with this username or email already exists');
     }
 
-    // Insert new user into the database
+    // neuen user erstellen
     const newUser = await User.create({ username, password, email });
 
     return newUser;
 }
 
 const loginUser = async(email, password) => {
-    // Find user in the database
+    // user suchen
     const user = await User.findOne({ email });
     if (!user) {
         throw new Error('User not found');
