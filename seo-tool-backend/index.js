@@ -27,7 +27,15 @@ app.post('/api/register', userController.registerUser);
 app.post('/api/login', userController.loginUser);
 
 // Liefert die letzten 10 Checks eines Benutzers
-app.get("/api/latest-checks", authenticate, userController.getLatestChecks);
+app.get("/api/projects", authenticate, userController.getLatestChecks);
+// Erstellt einen neuen Check
+app.post("/api/projects/create-check", authenticate, userController.createCheck);
+// ausgewählte Checks löschen
+app.post("/api/projects/delete-checks", authenticate, userController.deleteChecks);
+// alle Checks löschen
+app.post("/api/projects/delete-all-checks", authenticate, userController.deleteAllChecks);
+// Details des Checks über die ID
+app.get("/api/projects/:id", authenticate, userController.getCheckDetails);
 
 
 // Server starten

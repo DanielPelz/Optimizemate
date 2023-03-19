@@ -1,6 +1,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const mongoose = require('mongoose');
+const Crawler = require('./crawler');
+const crawler = new Crawler();
+
+
 
 
 const CheckSchema = new mongoose.Schema({
@@ -21,6 +25,9 @@ const CheckSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    screenshot: {
+        type: Buffer,
+    }
 });
 
 const Check = mongoose.model('Check', CheckSchema, "checks");
@@ -37,12 +44,22 @@ async function performPageCheck(url, userId) {
         timeout: 30000
     };
 
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
     try {
+        // Set viewport size to desktop resolution
+        await page.setViewport({
+            width: 1280,
+            height: 800,
+            deviceScaleFactor: 1,
+        });
+
         // Laden der Seite
-        const response = await axios.get(url, axiosConfig);
+        await page.goto(url, { waitUntil: 'networkidle2' });
 
         // HTML parsen
-        const $ = cheerio.load(response.data);
+        const $ = cheerio.load(await page.content());
 
         // Seite analysieren
         pageData.title = getPageTitle($);
@@ -74,7 +91,10 @@ async function performPageCheck(url, userId) {
         // Verbinden der Daten
         Object.assign(pageData, pageSpeedData);
 
-
+        // Screenshot aufnehmen und als Base64-String speichern
+        const screenshotBuffer = await page.screenshot();
+        const screenshotBase64 = screenshotBuffer.toString('base64');
+        pageData.screenshot = screenshotBase64;
 
         // ausrechnen der Gesamtpunktzahl
         pageData.score = calculatePageScore(pageData);
@@ -90,6 +110,8 @@ async function performPageCheck(url, userId) {
     } catch (error) {
         console.log(error);
         throw new Error("Page check failed");
+    } finally {
+        await browser.close();
     }
 
     return pageData;

@@ -38,10 +38,10 @@ const Navbar = () => {
                 {isOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 text-gray-700 z-10 dark:bg-gray-700 dark:text-white">
                     <Link
-                      to="/history"
+                      to="/projects"
                       className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      History
+                      Projekte
                     </Link>
                     <ToggleSwitch />
                     <button
@@ -96,10 +96,10 @@ const Navbar = () => {
                   <>
                     {" "}
                     <Link
-                      to="/history"
+                      to="/projects"
                       className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
-                      History
+                      Projekte
                     </Link>
                     <ToggleSwitch />
                     <button

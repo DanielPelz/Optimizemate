@@ -14,7 +14,7 @@ const Login = () => {
     setError(null);
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/projects");
     } catch (err) {
       setError("Fehler beim Einloggen. Bitte versuchen Sie es erneut.");
     }

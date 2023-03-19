@@ -5,7 +5,7 @@ import ResultsBox from "../../components/ResultsBox";
 import './Home.css';
 import { AuthContext } from "../../contexts/AuthContext/AuthContext";
 
-const Home = () => {
+const Service = () => {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +18,7 @@ const Home = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/seocheck", { url }, {
+      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/seocheck`, { url }, {
         headers: {
           'Authorization': user ? user.token : '',
         },
@@ -58,4 +58,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Service;
