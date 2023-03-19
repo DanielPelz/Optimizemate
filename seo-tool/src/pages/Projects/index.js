@@ -107,7 +107,7 @@ const Projects = () => {
         if (response.status !== 200) {
           throw new Error("Failed to create a new project");
         }
-  
+        setIsLoading(false);
         
       } catch (err) {
         setError("Failed to create a new project. Please try again.");
@@ -164,7 +164,8 @@ const Projects = () => {
             ]);
           }
   
-           setIsLoading(false);
+          // Set the loading state to false when the process is complete
+          setIsLoading(false);
           
           setOpen(false);
           setInputUrl("");

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Check, performPageCheck } = require('../services/modules/check');
+const { Check, performPageCheck } = require('../services/pageCheckService');
 const { registerUser, loginUser } = require('../services/modules/user');
 
 const createToken = (user) => {

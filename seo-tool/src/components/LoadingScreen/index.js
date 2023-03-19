@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { CircularProgress, Typography, Box } from "@mui/material";
 
 const LoadingScreen = ({ loadingMessage }) => {
-  const [loadingProgress] = useState(0);
-
+ 
   
 
   return (
@@ -14,7 +13,7 @@ const LoadingScreen = ({ loadingMessage }) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: "rgba(242, 242, 242, 0.8)",
+        backgroundColor: "rgba(242, 242, 242, 1)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -26,7 +25,7 @@ const LoadingScreen = ({ loadingMessage }) => {
         size={60}
         thickness={4}
         sx={{ marginBottom: 2 }}
-        value={loadingProgress}
+        value= {100}
       />
       <Typography variant="h5">{loadingMessage}</Typography>
     </Box>

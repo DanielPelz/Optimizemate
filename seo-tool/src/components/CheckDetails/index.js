@@ -56,14 +56,14 @@ const CheckDetails = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex flex-row items-center">
-        <div>
+      <div className="flex flex-row items-center ">
+        <div className="w-3/4">
           <h2 className="text-2xl mb-2 mr-4">URL: {check.url}</h2>
           <p>
             <strong>ID:</strong> {check._id}
           </p>
         </div>
-        <div className="image-preview-container">
+        <div className="image-preview-container rounded overflow-hidden w-1/4">
           {check.checkData.screenshot && (
             <img
               className="image-preview"
