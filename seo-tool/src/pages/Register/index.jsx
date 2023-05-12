@@ -34,7 +34,7 @@ const Register = () => {
       <h1 className="text-4xl font-bold mb-4">Registrieren</h1>
       {error && <div className="bg-red-500 p-2 mb-4">{error}</div>}
       <form onSubmit={handleSubmit}>
-        <div className="mb-4">
+        <div className="mb-4 ">
           <label htmlFor="username" className="block mb-2">
             Benutzername:
           </label>
@@ -43,7 +43,7 @@ const Register = () => {
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded dark:text-gray-900"
           />
         </div>
         <div className="mb-4">
@@ -55,11 +55,11 @@ const Register = () => {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded dark:text-gray-900"
           />
         </div>
         <div className="mb-4">
-          <label htmlFor="password" className="block mb-2">
+          <label htmlFor="password" className="block mb-2  ">
             Passwort:
           </label>
           <input
@@ -67,7 +67,7 @@ const Register = () => {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded dark:text-gray-900"
           />
         </div>
         <div className="mb-4">
@@ -79,10 +79,10 @@ const Register = () => {
             id="confirm-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
+            className="w-full p-2 border border-gray-300 rounded dark:text-gray-900"
           />
         </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded ">
           Registrieren
         </button>
       </form>

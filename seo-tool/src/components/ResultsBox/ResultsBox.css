@@ -1,3 +1,12 @@
 .results-container {
+    @apply dark:bg-gray-800 dark:text-white;
     padding-top: 90px;
+}
+
+.slick-slide>div {
+    margin: 0 10px;
+}
+
+.slick-list {
+    margin: 0 -10px;
 }

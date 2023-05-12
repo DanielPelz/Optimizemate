@@ -2,16 +2,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const modules = {};
+const ignoredFiles = ['index.js', 'user.js', 'check.js'];
 
-const ignoredFiles = ['index.js', 'user.js', 'check.js', 'crawler.js'];
+function loadModules() {
+    const modules = {};
 
-fs.readdirSync(__dirname).forEach((file) => {
-    if (ignoredFiles.includes(file)) return;
-    // Entfernt die Dateierweiterung ".js"
-    const moduleName = file.slice(0, -3);
-    modules[moduleName] = require(path.join(__dirname, file));
-    console.log(modules);
-});
+    fs.readdirSync(__dirname).forEach((file) => {
+        if (ignoredFiles.includes(file)) return;
+        // Entfernt die Dateierweiterung ".js"
+        const moduleName = file.slice(0, -3);
+        modules[moduleName] = require(path.join(__dirname, file));
+    });
 
-module.exports = modules;
+    return modules;
+}
+
+module.exports = { loadModules };

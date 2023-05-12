@@ -12,6 +12,8 @@ import {
 import { AuthContext } from "../../contexts/AuthContext/AuthContext";
 import axios from "axios";
 import LoadingScreen from "../../components/LoadingScreen";
+import { AiOutlineInfoCircle } from "react-icons/ai";
+import "./Projects.css";
 
 const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
@@ -22,29 +24,49 @@ const Project = ({ project, onProjectClick }) => {
 
   return (
     <div
-      className={`bg-white shadow-md rounded p-4 mb-4 block cursor-pointer ${
-        project.selected ? "bg-blue-100" : ""
+      className={`shadow-lg rounded-md p-4 mb-4 dark:bg-gray-700 block transition-all cursor-pointer ${
+        project.selected ? "bg-blue-100" : "bg-white"
       }`}
       onClick={handleClick}
     >
-      <h2 className="text-2xl mb-2">{project.url}</h2>
-      <p>
-        <strong>Erstellt am:</strong>
-        {new Date(project.createdAt).toLocaleString()}
-      </p>
-      <Link to={`/projects/${project.id}`} className="btn btn-primary">
-        Mehr Details
-      </Link>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl mb-2 rounded-xl bg-gray-100 dark:bg-gray-600 w-100 p-2 px-5 text-sm flex items-center">
+          <AiOutlineInfoCircle className="mr-2" />
+          {project.url}
+        </h2>
+        <p>
+          <strong>Erstellt am:</strong>
+          {new Date(project.createdAt).toLocaleString()}
+        </p>
+      </div>
+      <div className="flex justify-between items-center my-5">
+        <Link to={`/projects/${project.id}`} className="relative">
+          <a className="absolute inset-0 z-10 p-5 bg-white dark:bg-gray-800 text-center flex flex-col items-center justify-center opacity-0 hover:opacity-100 bg-opacity-80 duration-300">
+            <b>{project.title}</b>
+            <p className="mx-auto">{project.description}</p>
+            <hr class="h-px my-8 bg-gray-300 border-0 dark:bg-gray-700 w-1/2" />
+
+            <span>
+              Untersuchte Seiten:{" "}
+              <div className="center relative inline-block select-none whitespace-nowrap rounded-lg bg-blue-500 py-2 px-3.5 align-baseline font-sans text-xs font-bold uppercase leading-none text-white">
+                {project.urlCounter}
+              </div>
+            </span>
+          </a>
+          <img
+            className="rounded-md"
+            src={`data:image/png;base64,${project.screenshot}`}
+          />
+        </Link>
+      </div>
     </div>
   );
 };
 
 const Projects = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("");
   const [error, setError] = useState(null);
   const { user } = useContext(AuthContext);
- 
   const [open, setOpen] = useState(false);
   const [inputUrl, setInputUrl] = useState("");
   const [projects, setProjects] = useState([]);
@@ -64,6 +86,27 @@ const Projects = () => {
     }
   }, new Set());
 
+  const loadingMessages = [
+    "Projekt wird erstellt...",
+    "Einen Moment bitte...",
+    "Fast fertig...",
+  ];
+  const [currentLoadingMessageIndex, setCurrentLoadingMessageIndex] =
+    useState(0);
+
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setCurrentLoadingMessageIndex(
+          (prevIndex) => (prevIndex + 1) % loadingMessages.length
+        );
+      }, 2000);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [isLoading]);
   useEffect(() => {
     const fetchLatestprojects = async () => {
       setIsLoading(true);
@@ -76,12 +119,18 @@ const Projects = () => {
         });
 
         if (response.status !== 200) {
-          throw new Error("Failed to fetch latest projects");
+          throw new Error(
+            response.data.message ||
+              "Letzte Projekte konnten nicht abgerufen werden"
+          );
         }
 
         setProjects(response.data);
       } catch (err) {
-        setError("Failed to fetch latest projects. Please try again.");
+        setError(
+          err.message ||
+            "Die letzten Projekte konnten nicht abgerufen werden. Bitte versuchen Sie es erneut."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -90,6 +139,14 @@ const Projects = () => {
       fetchLatestprojects();
     }
   }, [user]);
+
+  const setLoadingMessage = (message) => {
+    setProjects((prevProjects) => {
+      const newProjects = [...prevProjects];
+      newProjects[currentLoadingMessageIndex] = message;
+      return newProjects;
+    });
+  };
 
   const createProject = async (url) => {
     return new Promise(async (resolve, reject) => {
@@ -103,20 +160,22 @@ const Projects = () => {
             },
           }
         );
-  
+
         if (response.status !== 200) {
-          throw new Error("Failed to create a new project");
+          throw new Error("Ein neues Projekt konnte nicht erstellt werden");
         }
         setIsLoading(false);
-        
+        resolve(response.data);
       } catch (err) {
-        setError("Failed to create a new project. Please try again.");
+        setError(
+          err.message || "Ein neues Projekt konnte nicht erstellt werden"
+        );
         // Reject the promise if an error occurs
         reject(err);
       }
     });
   };
-  
+
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -138,53 +197,52 @@ const Projects = () => {
 
   const handleAddProject = async () => {
     if (inputUrl) {
-      if (projects.length >= 3) {
-        alert("Please upgrade to a higher plan to add more projects.");
-      } else {
-        setIsLoading(true);
-        setLoadingMessage("Creating project...");
-  
-        try {
-          const newProject = await createProject(inputUrl);
-          console.log(newProject);
-          if (
-            newProject &&
-            !projects.some((project) => project.id === newProject.id)
-          ) {
-            // Format the new project
-            const formattedNewProject = {
-              id: newProject.id,
-              url: inputUrl,
-              createdAt: Date().toLocaleString(),
-              selected: false,
-            };
-            setProjects((prevProjects) => [
-              formattedNewProject,
-              ...prevProjects,
-            ]);
-          }
-  
-          // Set the loading state to false when the process is complete
-          setIsLoading(false);
-          
+      setIsLoading(true);
+      setCurrentLoadingMessageIndex(0);
+
+      try {
+        const newProject = await createProject(inputUrl);
+
+        if (newProject || !error) {
+          const formattedNewProject = {
+            id: newProject.id,
+            url: inputUrl,
+            createdAt: Date().toLocaleString(),
+            selected: false,
+            screenshot: newProject.homepageData.screenshot,
+            title: newProject.title,
+            description: newProject.description,
+            urlCounter: newProject.urlCounter,
+          };
+          setProjects((prevProjects) => [formattedNewProject, ...prevProjects]);
           setOpen(false);
           setInputUrl("");
-        
-        } catch (error) {
-          setLoadingMessage("Error loading");
-          setIsLoading(false);
-          // Show an error message to the user
-          // ...
+        }
+      } catch (error) {
+        setLoadingMessage("Ein neues Projekt konnte nicht erstellt werden");
+        setIsLoading(false);
+        // Zeige Fehlermeldung an
+
+        if (
+          error.response &&
+          error.response.status === 400 &&
+          error.response.data.message ===
+            "You have exceeded your plan's limits."
+        ) {
+          setError(
+            "Sie haben das Limit Ihres Plans erreicht. Bitte wechseln Sie zu einem höheren Plan, um mehr Projekte hinzuzufügen."
+          );
+        } else {
+          setError(
+            error.message || "Ein neues Projekt konnte nicht erstellt werden"
+          );
         }
       }
     } else {
-      // Handle empty URL input
+      // Leere Url
+      alert("Bitte geben Sie eine gültige URL ein.");
     }
   };
-  
-  
-  
-
   const handleDeleteSelected = async () => {
     try {
       // Ausgewählte löschen im Backend
@@ -200,7 +258,7 @@ const Projects = () => {
       // Ausgewählte rausnehmen
       dispatch({ type: "CLEAR" });
     } catch (error) {
-      setError("Failed to delete projects. Please try again.");
+      setError(error.message || "Failed to delete projects. Please try again.");
     }
   };
 
@@ -216,7 +274,10 @@ const Projects = () => {
         //alle Projekte löschen
         setProjects([]);
       } catch (error) {
-        setError("Failed to delete all projects. Please try again.");
+        setError(
+          error.message ||
+            "Es konnten nicht alle Projekte gelöscht werden. Bitte versuchen Sie es erneut."
+        );
       }
     }
   };
@@ -247,27 +308,31 @@ const Projects = () => {
       {error && <div className="bg-red-500 p-2 mb-4">{error}</div>}
       {isLoading ? (
         <div className="flex justify-center mt-5">
-            <LoadingScreen loadingMessage={loadingMessage} />
+          <LoadingScreen
+            loadingMessage={loadingMessages[currentLoadingMessageIndex]}
+          />
         </div>
       ) : (
         <div className="mt-5">
           <div className="grid grid-cols-2 gap-4">
             <div
-              className="bg-white border-2 border-dashed rounded p-4 mb-4 block cursor-pointer flex items-center justify-center"
+              className="bg-white dark:bg-gray-700 border-2 border-dashed rounded p-4 mb-4 block cursor-pointer flex items-center justify-center"
               onClick={handleClickOpen}
             >
               <span className="text-4xl">+</span>
-              <span className="ml-2">Add Project</span>
+              <span className="ml-2">Projekt hinzufügen</span>
             </div>
             <Dialog
               open={open}
               onClose={handleClose}
               aria-labelledby="form-dialog-title"
             >
-              <DialogTitle id="form-dialog-title">Add Project</DialogTitle>
+              <DialogTitle id="form-dialog-title">
+                Projekt hinzufügen
+              </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  Please enter the URL you would like to check.
+                  Bitte geben Sie die URL ein, die Sie überprüfen möchten.
                 </DialogContentText>
                 <TextField
                   autoFocus
@@ -282,16 +347,15 @@ const Projects = () => {
               </DialogContent>
               <DialogActions>
                 <Button onClick={handleClose} color="primary">
-                  Cancel
+                  Abbrechen
                 </Button>
                 <Button onClick={handleAddProject} color="primary">
-                  Add
+                  hinzufügen
                 </Button>
               </DialogActions>
             </Dialog>
             {projects.slice(0, 3).map((project, index) => (
               <Project
-                onAddProject={handleAddProject}
                 key={project.id}
                 project={project}
                 onProjectClick={handleProjectClick}

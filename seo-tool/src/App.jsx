@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Service from "./pages/seo-service";
 import Projects  from "./pages/Projects";
 import CheckDetails from './components/CheckDetails/';
+import "./App.css";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Login = lazy(() => import("./pages/Login"));

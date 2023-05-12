@@ -1,8 +1,12 @@
 // src/components/Navbar/Navbar.js
 import React, { useContext, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContext/AuthContext";
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
+import { BiArrowToLeft } from "react-icons/bi";
+import { TfiClose } from "react-icons/tfi";
+
+import "./Navbar.css";
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -15,13 +19,22 @@ const Navbar = () => {
       console.error("Failed to log out", error);
     }
   };
+  const location = useLocation();
+  const isProjectPage = location.pathname.startsWith("/projects/");
 
+  console.log(user);
   return (
     <nav className=" bg-white dark:bg-gray-800 py-4 shadow-md p-4 flex justify-between items-center  ">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold dark:text-white">
-          optimizemate.de
-        </Link>
+        {isProjectPage ? (
+          <Link to="/projects" className="text-base dark:text-white">
+            <BiArrowToLeft className="inline-block mr-2 text-2xl hover:scale-110 transition-all" />
+          </Link>
+        ) : (
+          <Link to="/" className="text-2xl font-bold dark:text-white">
+            optimizemate.de
+          </Link>
+        )}
         <div className="flex items-center">
           <div className="hidden md:flex">
             <Link to="/service" className="ml-4 dark:text-white">
@@ -36,20 +49,38 @@ const Navbar = () => {
                   Profile
                 </button>
                 {isOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 text-gray-700 z-10 dark:bg-gray-700 dark:text-white">
-                    <Link
-                      to="/projects"
-                      className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                  <div
+                    className={`${
+                      isOpen ? "open" : "closed"
+                    } sidemenu fixed h-full top-0 right-0 m-0   w-64 bg-white  shadow-lg py-1 text-gray-700 z-10 dark:bg-gray-700 dark:text-white`}
+                  >
+                    <a
+                      className="absolute right-3 top-3"
+                      onClick={() => setIsOpen(!isOpen)}
                     >
-                      Projekte
-                    </Link>
-                    <ToggleSwitch />
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-                    >
-                      Logout
-                    </button>
+                      <TfiClose className="cursor-pointer" />
+                    </a>
+                    <div className="sidebar-list p-4">
+                      <div className="sidebar-profile">
+                        <h3 className="text-xl">Hi, {user.username} </h3>
+                        {user.servicePlan && <div className={`${user.servicePlan == "free" ? "bg-green-600" : "bg-blue-800"} light:text-white plan rounded-xl w-16 text-center text-sm my-2`}>{user.servicePlan}</div>}
+                      </div>
+                      <Link
+                        to="/projects"
+                        className="block   py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        Projekte
+                      </Link>
+                    </div>
+                    <div className="absolute right-0 bottom-0 left-0 px-4 py-4 mt-2 w-full bg-gray-100 flex flex-row text-gray-700 z-10 dark:bg-gray-800 dark:text-white">
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left  text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        Logout
+                      </button>
+                      <ToggleSwitch />
+                    </div>
                   </div>
                 )}
               </>
@@ -94,7 +125,6 @@ const Navbar = () => {
                 </Link>
                 {user ? (
                   <>
-                    {" "}
                     <Link
                       to="/projects"
                       className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"

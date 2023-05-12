@@ -1,94 +1,76 @@
-const cheerio = require('cheerio');
-const mongoose = require('mongoose');
-const puppeteer = require('puppeteer');
-const SEO = require('./modules/index');
+// init Crawler
+const CrawlerClass = require('./crawler/crawler.js');
 
 
-const CheckSchema = new mongoose.Schema({
-    url: {
-        type: String,
-        required: true,
-    },
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    checkData: {
-        type: Object,
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    screenshot: {
-        type: Buffer,
+function isValidUrl(url) {
+    try {
+        new URL(url);
+        return true;
+    } catch (_) {
+        return false;
     }
-});
+}
 
-const Check = mongoose.model('Check', CheckSchema, "checks");
+async function performPageCheck(url, Id, socket) {
 
+    const Crawler = new CrawlerClass();
 
-async function performPageCheck(url, userId) {
-    const pageData = {};
+    let pageData = {};
+    let homepageData;
+    let urlCounter;
 
-
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+    // Starten des Browsers von Crawler 
+    await Crawler.init();
 
     try {
-        // Set viewport size to desktop resolution
-        await page.setViewport({
-            width: 1280,
-            height: 800,
-            deviceScaleFactor: 1,
-        });
+        // Crawling aller internen Seiten
+        const { crawledData } = await Crawler.crawlInternalPages(url, socket);
+        const homepage = crawledData.find(data => data.url === url);
 
-        // Laden der Seite
-        await page.goto(url, { waitUntil: 'networkidle2' });
+        // Zählen der Anzahl der URLs
+        urlCounter = Crawler.urlCounter;
 
-        // HTML parsen
-        const $ = cheerio.load(await page.content());
+        // Speichern der Homepage-Daten
+        homepageData = homepage;
 
-        // Seite analysieren
-        pageData.title = SEO.pageTitle.getPageTitle($);
-        pageData.description = SEO.pageDescription.getPageDescription($);
-        pageData.keywords = SEO.pageKeywords.getPageKeywords($);
-
-
-        pageData.missingAltTags = SEO.pageAltTags.getImageAltTags($);
-
-        // Page speed check
-        pageData.pageSpeedData = await SEO.pageSpeedtest.getPageSpeedData(url);
-
-
-        // Screenshot aufnehmen und als Base64-String speichern
-        const screenshotBuffer = await page.screenshot();
-        const screenshotBase64 = screenshotBuffer.toString('base64');
-        pageData.screenshot = screenshotBase64;
+        // Überprüfen, ob die Homepage gecrawlt wurde
+        if (!homepageData) {
+            throw new Error('Homepage not crawled');
+        }
 
 
 
-        // Speichern der Daten in der Datenbank
-        const newCheck = new Check({
-            url: url,
-            userId: userId,
-            checkData: pageData
-        });
-        await newCheck.save();
+        // Analysieren jeder Seite
+        for (const pageUrl of crawledData.filter(data => data.url !== url)) {
+            if (isValidUrl(pageUrl.url)) {
+
+                pageData[pageUrl.url] = {
+                    title: pageUrl.title,
+                    description: pageUrl.description,
+                    keywords: pageUrl.keywords,
+                    missingAltTags: pageUrl.missingAltTags,
+                    brokenLinks: pageUrl.brokenLinks,
+                    metrics: {
+                        responseTime: pageUrl.responseTime,
+                        gzip: pageUrl.checkGzip,
+                        cssFiles: pageUrl.cssFiles,
+                        jsFiles: pageUrl.jsFiles,
+                    }
+                };
+            } else {
+                console.log('Skipping invalid URL:', pageUrl);
+            }
+        }
 
     } catch (error) {
-        console.log(error);
-        throw new Error("Page check failed");
-    } finally {
-        await browser.close();
+        throw new Error(error);
+    } finally { // Wird immer ausgeführt, egal ob try oder catch
+        await Crawler.close();
     }
 
-    return pageData;
+    return { pageData, urlCounter, homepageData };
 }
 
 module.exports = {
-    Check,
     performPageCheck
 }
