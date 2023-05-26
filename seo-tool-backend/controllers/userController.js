@@ -35,6 +35,7 @@ module.exports = {
         try {
             const { email, password } = req.body;
             const user = await loginUser(email, password);
+
             const token = createToken(user);
             res.json({...filterUserFields(user), token });
         } catch (error) {

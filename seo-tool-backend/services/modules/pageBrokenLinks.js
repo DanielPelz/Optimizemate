@@ -12,14 +12,14 @@ async function getBrokenLinks($, url, page) {
         const absoluteUrl = href.startsWith('http') ? href : new URL(href, url).toString();
 
         try {
-            const response = await page.goto(absoluteUrl, { timeout, waitUntil: 'domcontentloaded' });
+            const response = page;
 
             if (response.status() >= 400) {
                 brokenLinks.push(absoluteUrl);
             }
 
             // Return to the original page
-            await page.goto(url, { timeout, waitUntil: 'domcontentloaded' });
+            await response;
         } catch (error) {
             brokenLinks.push(absoluteUrl);
         }

@@ -149,31 +149,30 @@ const Projects = () => {
   };
 
   const createProject = async (url) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await axios.post(
-          `${apiBaseUrl}/api/projects/create-check`,
-          { url },
-          {
-            headers: {
-              Authorization: user ? user.token : "",
-            },
-          }
-        );
-
-        if (response.status !== 200) {
-          throw new Error("Ein neues Projekt konnte nicht erstellt werden");
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        `${apiBaseUrl}/api/projects/create-check`,
+        { url },
+        {
+          headers: {
+            Authorization: user ? user.token : "",
+          },
         }
-        setIsLoading(false);
-        resolve(response.data);
-      } catch (err) {
-        setError(
-          err.message || "Ein neues Projekt konnte nicht erstellt werden"
-        );
-        // Reject the promise if an error occurs
-        reject(err);
+      );
+
+      if (response.status !== 200) {
+        throw new Error("Ein neues Projekt konnte nicht erstellt werden");
       }
-    });
+
+      return response.data;
+    } catch (err) {
+      setError(err.message || "Ein neues Projekt konnte nicht erstellt werden");
+      // Reject the promise if an error occurs
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClickOpen = () => {
@@ -195,15 +194,26 @@ const Projects = () => {
     );
   };
 
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+    } catch (_) {
+      return false;
+    }
+
+    return true;
+  };
+
   const handleAddProject = async () => {
-    if (inputUrl) {
+    if (inputUrl && isValidUrl(inputUrl)) {
       setIsLoading(true);
       setCurrentLoadingMessageIndex(0);
 
       try {
         const newProject = await createProject(inputUrl);
 
-        if (newProject || !error) {
+        if (newProject) {
+          // Überprüfung ob das Projekt existiert
           const formattedNewProject = {
             id: newProject.id,
             url: inputUrl,
@@ -354,7 +364,7 @@ const Projects = () => {
                 </Button>
               </DialogActions>
             </Dialog>
-            {projects.slice(0, 3).map((project, index) => (
+            {projects.map((project, index) => (
               <Project
                 key={project.id}
                 project={project}

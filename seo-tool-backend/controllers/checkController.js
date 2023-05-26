@@ -13,11 +13,11 @@ module.exports = {
                 .lean();
 
             // Keep only the last 3 checks
-            const latestChecks = checks.slice(0, 3);
+            const latestChecks = checks;
 
             // Delete older checks
-            const olderChecksIds = checks.slice(3).map((check) => check._id);
-            await Check.deleteMany({ userId, _id: { $in: olderChecksIds } });
+            /*       const olderChecksIds = checks.map((check) => check._id); */
+            /*   await Check.deleteMany({ userId, _id: { $in: olderChecksIds } }); */
 
             const summaries = latestChecks.map(check => ({
                 url: check.url,
@@ -78,6 +78,44 @@ module.exports = {
         }
     },
 
+    renewCheck: async(req, res) => {
+        try {
+            const userId = req.user._id;
+            const checkId = req.body.id; // Get the ID from the request body
+
+            // Find the existing check
+            const check = await Check.findOne({ userId: userId, _id: checkId });
+
+            if (!check) {
+                return res.status(404).json({ message: "Check not found" });
+            }
+
+            // Perform the page check again
+            const { pageData, urlCounter, homepageData, crawlerLogs } = await performPageCheck(check.url, userId, req.app.get('socket'));
+
+            // Update the check with the new data
+            check.pageData = pageData;
+            check.urlCounter = urlCounter;
+            check.homepageData = homepageData;
+
+            check.title = homepageData.title;
+            check.description = homepageData.description;
+            check.screenshot = homepageData.screenshot;
+            check.logs = crawlerLogs;
+
+            await check.save();
+
+
+
+            // Send the updated check data
+            res.status(200).json({ message: "Check renewed successfully." });
+
+        } catch (error) {
+            console.error("Error renewing check:", error);
+            res.status(500).json({ message: "Error renewing check", error });
+        }
+    },
+
     createCheck: async(req, res) => {
         try {
             const userId = req.user._id;
@@ -120,7 +158,7 @@ module.exports = {
             }
 
             // Überprüfen, ob die URL bereits einmal für einen anderen Benutzer hinzugefügt wurde
-            const { pageData, urlCounter, homepageData } = await performPageCheck(url, userId, req.app.get('socket'));
+            const { pageData, urlCounter, homepageData, crawlerLogs } = await performPageCheck(url, userId, req.app.get('socket'));
 
             // Speichere die Check-Daten in der Datenbank
             const createdCheck = new Check({
@@ -132,6 +170,7 @@ module.exports = {
                 screenshot: homepageData.screenshot,
                 urlCounter: urlCounter,
                 homepageData: homepageData,
+                logs: crawlerLogs,
 
 
             });
@@ -145,8 +184,9 @@ module.exports = {
                 userId: userId,
                 screenshot: homepageData.screenshot,
                 urlCounter: urlCounter,
-                pageData: pageData,
                 homepageData: homepageData,
+
+
 
 
             };

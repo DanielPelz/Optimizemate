@@ -17,7 +17,6 @@ require("dotenv").config();
 
 
 
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -43,12 +42,30 @@ app.post("/api/projects/delete-checks", authenticate, checkController.deleteChec
 app.post("/api/projects/delete-all-checks", authenticate, checkController.deleteAllChecks);
 // Details des Checks über die ID
 app.get("/api/projects/:id", authenticate, checkController.getCheckDetails);
+// Check erneut durchführen
+app.post("/api/projects/renew-check", authenticate, checkController.renewCheck);
 
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
-    socket.on('disconnect', () => {
-        console.log('A user disconnected:', socket.id);
-    });
+io.use((socket, next) => {
+    const username = socket.handshake.auth.socketUser;
+    console.log("username:", username);
+    if (!username) {
+        return next(new Error("invalid username"));
+    }
+    socket.username = username;
+    next();
+});
+
+io.on('connection', () => {
+    const users = [];
+    for (let [id, socket] of io.of("/").sockets) {
+        users.push({
+            userID: id,
+            username: socket.username,
+        });
+    }
+    console.log("users:", users);
+
+
 });
 
 app.set('socket', io);

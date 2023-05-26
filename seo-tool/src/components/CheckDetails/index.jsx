@@ -15,32 +15,34 @@ const CheckDetails = () => {
   const { id } = useParams();
 
   useEffect(() => {
-    const fetchCheckDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_BASE_URL}/api/projects/${id}`,
-          {
-            headers: {
-              Authorization: user ? user.token : "",
-            },
+    if (user) {
+      const fetchCheckDetails = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await axios.get(
+            `${process.env.REACT_APP_API_BASE_URL}/api/projects/${id}`,
+            {
+              headers: {
+                Authorization: user.token || "",
+              },
+            }
+          );
+  
+          if (response.status !== 200) {
+            throw new Error("Failed to fetch check details");
           }
-        );
-
-        if (response.status !== 200) {
-          throw new Error("Failed to fetch check details");
+  
+          setCheck(response.data);
+        } catch (err) {
+          setError("Failed to fetch check details. Please try again.");
+        } finally {
+          setLoading(false);
         }
-
-        setCheck(response.data);
-      } catch (err) {
-        setError("Failed to fetch check details. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCheckDetails();
+      };
+  
+      fetchCheckDetails();
+    }
   }, [user, id]);
 
   if (loading) {
@@ -75,11 +77,7 @@ const CheckDetails = () => {
               <p className="flex justify-between">
                 Durchschnitliche Antowrtzeit:{" "}
                 <b>
-                  {
-                    check.homepageData.metrics.responseTime
-                      .averageResponseTimeInSeconds
-                  }
-                  s
+                  {check.homepageData.metrics.responseTime.averageResponseTime}s
                 </b>
               </p>
               <p className="flex justify-between">
@@ -92,7 +90,7 @@ const CheckDetails = () => {
               </p>
               <p className="flex justify-between">
                 Durchschnittliche Javascript Datein:{" "}
-                <b>{check.homepageData.metrics.jsFiles}</b>
+                <b>{check.homepageData.metrics.jsFiles.length}</b>
               </p>
             </div>
           )}
@@ -121,6 +119,40 @@ const CheckDetails = () => {
             </div>
           </span>
         </div>
+      </div>
+      <div className="flex flex-row items-center mt-5 bg-gray-900 overflow-hidden  rounded-md">
+        {check.logs && (
+          <table className="table-auto w-full">
+            <thead>
+              <tr className="text-left bg-dark p-4">
+                <th className="p-4">Url</th>
+                <th className="p-4">Start</th>
+                <th className="p-4">Zzeit / Url</th>
+                <th className="p-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {check.logs.map((log) => (
+                <tr>
+                  <td className="p-4">{log.url}</td>
+                  <td className="p-4">
+                    {new Date(log.crawlDateTime).toLocaleString()}
+                  </td>
+                  <td className="p-4">{log.crawlTime.toLocaleString()}s</td>
+                  <td
+                    className={`${
+                      log.status == "success"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    } p-4`}
+                  >
+                    {log.status}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       <div className="flex flex-row items-center mt-5">
         <ResultsBox

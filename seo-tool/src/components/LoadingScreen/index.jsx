@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { CircularProgress, Typography, Box } from "@mui/material";
 import { styled } from "@mui/system";
-import { io } from "socket.io-client";
+import socket from "../../contexts/Socket/Socket";
 import "./LoadingScreen.css";
 
 const Container = styled(Box)(() => ({
@@ -23,7 +23,7 @@ const LoadingScreen = ({ loadingMessage }) => {
   const [currentUrl, setCurrentUrl] = useState(null);
 
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_API_BASE_URL);
+    
 
     socket.on("time_update", ({ remainingTime, estimatedTotalTime }) => {
       setRemainingTime(remainingTime);
@@ -31,7 +31,7 @@ const LoadingScreen = ({ loadingMessage }) => {
     });
     socket.on("current_url", (currentUrl) => {
       setCurrentUrl(currentUrl);
-      console.log(currentUrl);
+      
     });
 
     return () => {

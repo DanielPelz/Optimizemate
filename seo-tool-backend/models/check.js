@@ -36,6 +36,10 @@ const CheckSchema = new mongoose.Schema({
         type: Object,
         required: true,
     },
+    logs: {
+        type: Object,
+        required: true,
+    }
 });
 
 const Check = mongoose.model('Check', CheckSchema, "checks");

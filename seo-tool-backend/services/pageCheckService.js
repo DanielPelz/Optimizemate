@@ -1,46 +1,47 @@
-// init Crawler
+const { createPool } = require('generic-pool');
 const CrawlerClass = require('./crawler/crawler.js');
+const { isValidUrl } = require('../helpers/index.js');
 
-
-function isValidUrl(url) {
-    try {
-        new URL(url);
-        return true;
-    } catch (_) {
-        return false;
+const crawlerFactory = {
+    create: function(socket) {
+        const crawler = new CrawlerClass({ socket });
+        return crawler.init().then(() => crawler);
+    },
+    destroy: function(crawler) {
+        return crawler.close();
     }
-}
+};
+
+const opts = {
+    max: 9999, // maximale Anzahl von Crawlern im Pool
+    min: 1 // minimale Anzahl von Crawlern im Pool
+};
+
+const CrawlerPool = createPool(crawlerFactory, opts);
 
 async function performPageCheck(url, Id, socket) {
-
-    const Crawler = new CrawlerClass();
-
+    let Crawler;
     let pageData = {};
     let homepageData;
     let urlCounter;
+    let crawlerLogs = {};
 
-    // Starten des Browsers von Crawler 
-    await Crawler.init();
+
 
     try {
-        // Crawling aller internen Seiten
-        const { crawledData } = await Crawler.crawlInternalPages(url, socket);
+        Crawler = await CrawlerPool.acquire(socket);
+        const { crawledData } = await Crawler.crawlInternalPages(url);
         const homepage = crawledData.find(data => data.url === url);
 
-        // Zählen der Anzahl der URLs
         urlCounter = Crawler.urlCounter;
+        crawlerLogs = Crawler.crawlLogs
 
-        // Speichern der Homepage-Daten
         homepageData = homepage;
 
-        // Überprüfen, ob die Homepage gecrawlt wurde
         if (!homepageData) {
             throw new Error('Homepage not crawled');
         }
 
-
-
-        // Analysieren jeder Seite
         for (const pageUrl of crawledData.filter(data => data.url !== url)) {
             if (isValidUrl(pageUrl.url)) {
 
@@ -50,12 +51,7 @@ async function performPageCheck(url, Id, socket) {
                     keywords: pageUrl.keywords,
                     missingAltTags: pageUrl.missingAltTags,
                     brokenLinks: pageUrl.brokenLinks,
-                    metrics: {
-                        responseTime: pageUrl.responseTime,
-                        gzip: pageUrl.checkGzip,
-                        cssFiles: pageUrl.cssFiles,
-                        jsFiles: pageUrl.jsFiles,
-                    }
+
                 };
             } else {
                 console.log('Skipping invalid URL:', pageUrl);
@@ -64,11 +60,13 @@ async function performPageCheck(url, Id, socket) {
 
     } catch (error) {
         throw new Error(error);
-    } finally { // Wird immer ausgeführt, egal ob try oder catch
-        await Crawler.close();
+    } finally {
+        if (Crawler) {
+            await CrawlerPool.release(Crawler);
+        }
     }
 
-    return { pageData, urlCounter, homepageData };
+    return { pageData, urlCounter, homepageData, crawlerLogs };
 }
 
 module.exports = {
